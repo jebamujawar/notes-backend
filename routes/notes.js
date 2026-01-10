@@ -70,7 +70,7 @@ router.delete("/:id", auth, async (req, res) => {
 
     if (!deleted) {
       return res.status(404).json({ msg: "Note not found" });
-    }
+    } 
 
     res.json({ msg: "Note deleted" });
 
