@@ -18,8 +18,8 @@ mongoose.connect(process.env.MONGO_URL)
   .catch(err => console.error('MongoDB connection error:', err)); 
 
   //Routes
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/notes", require("./routes/notes"));
+app.use("/api/auth",authRoutes );
+app.use("/api/notes",noteRoutes );
 
 //Start server
 const PORT = process.env.PORT || 5000;
