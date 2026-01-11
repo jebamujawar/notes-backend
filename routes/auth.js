@@ -5,11 +5,6 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-if (!process.env.JWT_SECRET) {
-  console.error("JWT_SECRET is not set in .env!");
-  process.exit(1);
-}
-
 // SIGNUP
 router.post("/signup", async (req, res) => {
   try {
@@ -24,10 +19,11 @@ router.post("/signup", async (req, res) => {
     const user = new User({ username, email, password: hashedPassword });
     await user.save();
 
+    console.log(`New user created: ${username}`);
     res.status(201).json({ msg: "Signup successful" });
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ msg: "Server error", error: err.message });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ msg: "Server error during signup", error: error.message });
   }
 });
 
@@ -44,12 +40,16 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     res.json({ token, username: user.username, email: user.email });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ msg: "Server error", error: err.message });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ msg: "Server error during login", error: error.message });
   }
 });
 

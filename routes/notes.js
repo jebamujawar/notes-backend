@@ -1,65 +1,63 @@
 const express = require("express");
 const Note = require("../models/Note");
-const authMiddleware = require("../middleware/auth");
-
+const auth = require("../middleware/auth");
 const router = express.Router();
 
 // CREATE NOTE
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", auth, async (req, res) => {
   try {
     const { title, content, color } = req.body;
-    if (!title || !content) return res.status(400).json({ msg: "Title and content required" });
-
-    const note = new Note({ userId: req.user, title, content, color });
+    const note = new Note({ user: req.user, title, content, color });
     await note.save();
     res.status(201).json(note);
   } catch (err) {
-    res.status(500).json({ msg: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
 // GET NOTES (with optional search)
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
-    const { search } = req.query;
-    let query = { userId: req.user };
-
-    if (search) query.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { content: { $regex: search, $options: "i" } }
-    ];
-
-    const notes = await Note.find(query).sort({ updatedAt: -1 });
+    const search = req.query.search || "";
+    const notes = await Note.find({
+      user: req.user,
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { content: { $regex: search, $options: "i" } }
+      ]
+    }).sort({ createdAt: -1 });
     res.json(notes);
   } catch (err) {
-    res.status(500).json({ msg: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
 // UPDATE NOTE
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
     const { title, content, color } = req.body;
     const note = await Note.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user },
-      { title, content, color, updatedAt: Date.now() },
+      { _id: req.params.id, user: req.user },
+      { title, content, color },
       { new: true }
     );
-    if (!note) return res.status(404).json({ msg: "Note not found" });
     res.json(note);
   } catch (err) {
-    res.status(500).json({ msg: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
 // DELETE NOTE
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const note = await Note.findOneAndDelete({ _id: req.params.id, userId: req.user });
-    if (!note) return res.status(404).json({ msg: "Note not found" });
+    await Note.findOneAndDelete({ _id: req.params.id, user: req.user });
     res.json({ msg: "Note deleted" });
   } catch (err) {
-    res.status(500).json({ msg: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
