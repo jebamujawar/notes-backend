@@ -5,6 +5,7 @@ const User = require("../models/User");
 
 const router = express.Router();
 
+// Ensure JWT_SECRET exists
 if (!process.env.JWT_SECRET) {
   console.error("JWT_SECRET is not set in .env!");
   process.exit(1);
@@ -28,7 +29,7 @@ router.post("/signup", async (req, res) => {
     const user = new User({ username, email, password: hashedPassword });
     await user.save();
 
-    console.log(`New user created: ${username}`);
+    console.log(`New user created: ${username} (${email})`);
     res.status(201).json({ msg: "Signup successful" });
 
   } catch (error) {
@@ -42,25 +43,25 @@ router.post("/signup", async (req, res) => {
 // ==============================
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body; // use email
 
-    if (!username || !password)
+    if (!email || !password)
       return res.status(400).json({ msg: "All fields are required" });
 
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email }); // find by email
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
     const token = jwt.sign(
-      { userId: user._id, username: user.username },
+      { userId: user._id, username: user.username, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    console.log(`User logged in: ${username}`);
-    res.json({ token, username: user.username, email: user.email }); // send email if needed
+    console.log(`User logged in: ${email}`);
+    res.json({ token, username: user.username, email: user.email });
 
   } catch (error) {
     console.error("Login error:", error);
