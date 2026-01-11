@@ -16,7 +16,7 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// GET NOTES (with optional search)
+// GET NOTES
 router.get("/", auth, async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -26,7 +26,7 @@ router.get("/", auth, async (req, res) => {
         { title: { $regex: search, $options: "i" } },
         { content: { $regex: search, $options: "i" } }
       ]
-    }).sort({ createdAt: -1 });
+    }).sort({ updatedAt: -1 });
     res.json(notes);
   } catch (err) {
     console.error(err);
