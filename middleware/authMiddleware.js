@@ -8,8 +8,7 @@ module.exports = (req, res, next) => {
   }
 
   try {
-    // Expect token in header as: "Bearer <token>"
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]; // Expect header as: "Bearer <token>"
     if (!token) return res.status(401).json({ msg: "Token missing" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
