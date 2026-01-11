@@ -4,78 +4,49 @@ const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// GET ALL NOTES
+// GET all notes for user
 router.get("/", auth, async (req, res) => {
   try {
-    const notes = await Note.find({ user: req.user })
-      .sort({ pinned: -1, createdAt: -1 });
-
+    const notes = await Note.find({ user: req.user }).sort({ pinned: -1 });
     res.json(notes);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Get notes error:", error);
+    res.status(500).json({ msg: "Server error fetching notes" });
   }
 });
 
-// ADD NOTE
+// CREATE note
 router.post("/", auth, async (req, res) => {
   try {
-    const { title, content, color } = req.body;
-
-    if (!title || !content) {
-      return res.status(400).json({ msg: "Title and content required" });
-    }
-
-    const note = new Note({
-      user: req.user,
-      title,
-      content,
-      color
-    });
-
+    const { title, content, color, pinned } = req.body;
+    const note = new Note({ user: req.user, title, content, color, pinned: pinned || false });
     await note.save();
-    res.status(201).json(note);
-
+    res.json(note);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Add note error:", error);
+    res.status(500).json({ msg: "Server error adding note" });
   }
 });
 
-// UPDATE NOTE
+// UPDATE note
 router.put("/:id", auth, async (req, res) => {
   try {
-    const updatedNote = await Note.findOneAndUpdate(
-      { _id: req.params.id, user: req.user },
-      req.body,
-      { new: true }
-    );
-
-    if (!updatedNote) {
-      return res.status(404).json({ msg: "Note not found" });
-    }
-
-    res.json(updatedNote);
-
+    const note = await Note.findOneAndUpdate({ _id: req.params.id, user: req.user }, req.body, { new: true });
+    res.json(note);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Update note error:", error);
+    res.status(500).json({ msg: "Server error updating note" });
   }
 });
 
-// DELETE NOTE
+// DELETE note
 router.delete("/:id", auth, async (req, res) => {
   try {
-    const deleted = await Note.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user
-    });
-
-    if (!deleted) {
-      return res.status(404).json({ msg: "Note not found" });
-    } 
-
+    await Note.findOneAndDelete({ _id: req.params.id, user: req.user });
     res.json({ msg: "Note deleted" });
-
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Delete note error:", error);
+    res.status(500).json({ msg: "Server error deleting note" });
   }
 });
 
